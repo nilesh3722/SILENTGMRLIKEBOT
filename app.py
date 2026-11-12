@@ -135,26 +135,40 @@ def make_request(encrypt, region, token):
             url = "https://client.us.freefiremobile.com/GetPlayerPersonalShow"
         else:
             url = "https://clientbp.ggpolarbear.com/GetPlayerPersonalShow"
+
         edata = bytes.fromhex(encrypt)
+
         headers = {
-            "User-Agent": "Dalvik/2.1.0 (Linux; U; Android 9; ASUS_Z01QD Build/PI)",
+            "User-Agent": "Dalvik/2.1.0",
             "Connection": "Keep-Alive",
             "Accept-Encoding": "gzip",
             "Authorization": f"Bearer {token}",
             "Content-Type": "application/x-www-form-urlencoded",
-            "Expect": "100-continue",
             "X-Unity-Version": "2018.4.11f1",
             "X-GA": "v1 1",
             "ReleaseVersion": "OB55"
         }
-        response = requests.post(url, data=edata, headers=headers, verify=False)
+
+        response = requests.post(
+            url, data=edata, headers=headers, verify=False
+        )
+
+        app.logger.info(f"HTTP Status: {response.status_code}")
+        app.logger.info(f"Content-Type: {response.headers.get('Content-Type')}")
+        app.logger.info(f"Response Size: {len(response.content)} bytes")
+        app.logger.info(f"Response Hex: {response.content[:32].hex()}")
+
+        response.raise_for_status()
+
         binary = response.content
         decoded = visit_count_pb2.Info()
         decoded.ParseFromString(binary)
         return decoded
+
     except DecodeError as e:
         app.logger.error(f"DecodeError: {e}")
         return None
+
     except Exception as e:
         app.logger.error(f"Error in make_request: {e}")
         return None
